@@ -2,6 +2,7 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import pins
 from esphome.components import spi
+from esphome.components import remote_transmitter
 from esphome.const import CONF_ID
 
 CODEOWNERS = ["@swoboda1337"]
@@ -17,6 +18,7 @@ CONF_MODULATION = "modulation"
 CONF_RX_FLOOR = "rx_floor"
 CONF_RX_START = "rx_start"
 CONF_RX_BANDWIDTH = "rx_bandwidth"
+CONF_TRANSMITTER_ID = 'transmitter_id'
 
 sx127x_ns = cg.esphome_ns.namespace("sx127x")
 SX127x = sx127x_ns.class_("SX127x", cg.Component, spi.SPIDevice)
@@ -71,6 +73,7 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_RX_BANDWIDTH, default="50_0kHz"): cv.enum(RX_BW),
             cv.Optional(CONF_PA_PIN, default="PA_BOOST"): cv.enum(PA_PIN),
             cv.Optional(CONF_PA_POWER, default=17): cv.int_range(min=0, max=17),
+            cv.Optional(CONF_TRANSMITTER_ID): cv.use_id(remote_transmitter.RemoteTransmitterComponent),
         }
     ).extend(spi.spi_device_schema(False, 8e6, 'mode0'))
 )
@@ -90,3 +93,6 @@ async def to_code(config):
     cg.add(var.set_rx_bandwidth(config[CONF_RX_BANDWIDTH]))
     cg.add(var.set_pa_pin(config[CONF_PA_PIN]))
     cg.add(var.set_pa_power(config[CONF_PA_POWER]))
+    if config.get(CONF_TRANSMITTER_ID):
+        tx = await cg.get_variable(config[CONF_TRANSMITTER_ID])
+        cg.add(var.set_transmitter(tx))

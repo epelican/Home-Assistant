@@ -1,6 +1,10 @@
 #pragma once
 
 #include "esphome/components/spi/spi.h"
+#ifdef USE_REMOTE_TRANSMITTER
+#include "esphome/components/remote_base/remote_base.h"
+#include "esphome/components/remote_transmitter/remote_transmitter.h"
+#endif
 
 namespace esphome {
 namespace sx127x {
@@ -40,6 +44,9 @@ enum SX127xPaPin : uint8_t {
 };
 
 class SX127x : public Component,
+#ifdef USE_REMOTE_TRANSMITTER
+               public remote_base::RemoteTransmitterListener,
+#endif
                public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRST, 
                                      spi::CLOCK_POLARITY_LOW, 
                                      spi::CLOCK_PHASE_LEADING,
@@ -48,6 +55,10 @@ class SX127x : public Component,
   float get_setup_priority() const override { return setup_priority::HARDWARE; }
   void setup() override;
   void dump_config() override;
+#ifdef USE_REMOTE_TRANSMITTER
+  void on_transmit() override;
+  void on_complete() override;
+#endif
   void set_rst_pin(InternalGPIOPin *rst_pin) { this->rst_pin_ = rst_pin; }
   void set_nss_pin(InternalGPIOPin *nss_pin) { this->nss_pin_ = nss_pin; }
   void set_frequency(uint32_t frequency) { this->frequency_ = frequency; }
@@ -60,11 +71,16 @@ class SX127x : public Component,
   void set_mode_standby();
   void set_mode_tx();
   void set_mode_rx();
-
+#ifdef USE_REMOTE_TRANSMITTER
+  void set_transmitter(remote_transmitter::RemoteTransmitterComponent *tx) { this->remote_transmitter_ = tx; }
+#endif
  protected:
   void write_register_(uint8_t address, uint8_t value);
   uint8_t single_transfer_(uint8_t address, uint8_t value);
   uint8_t read_register_(uint8_t address);
+#ifdef USE_REMOTE_TRANSMITTER
+  remote_transmitter::RemoteTransmitterComponent *remote_transmitter_{nullptr};
+#endif
   InternalGPIOPin *rst_pin_{nullptr};
   InternalGPIOPin *nss_pin_{nullptr};
   SX127xPaPin pa_pin_;
